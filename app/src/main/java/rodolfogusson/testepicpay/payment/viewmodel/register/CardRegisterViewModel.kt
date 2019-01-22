@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import rodolfogusson.testepicpay.R
-import java.util.*
 import java.lang.Exception
 import java.time.DateTimeException
 import java.time.LocalDate
@@ -36,8 +35,6 @@ class CardRegisterViewModel(application: Application) : AndroidViewModel(applica
                                    val error: MutableLiveData<String>,
                                    val hasValidData: ((Validation) -> Boolean)?) {
 
-        var timer = Timer()
-        val delay: Long = 1000
         var passed = false
 
         fun validate() {
@@ -55,23 +52,21 @@ class CardRegisterViewModel(application: Application) : AndroidViewModel(applica
 
     fun onDataChanged(data: MutableLiveData<String>) {
         validations.firstOrNull { it.data == data }?.let { validation ->
-            // Reset error when new characters are typed
-            validation.error.postValue(null)
-            // Delayed validation, as new characters are typed in the fields
-            validation.timer.cancel()
-            validation.timer = Timer()
-            validation.timer.schedule(object : TimerTask() {
-                override fun run() {
-                    validation.validate()
-                    val visibility = allFieldsAreValid()
-                    if (visibility != saveButtonVisible.value) saveButtonVisible.postValue(visibility)
-                }
-            }, validation.delay)
+            val visibility = allFieldsAreFilled()
+            if (visibility != saveButtonVisible.value) saveButtonVisible.postValue(visibility)
         }
     }
 
-    private fun allFieldsAreValid() : Boolean {
+    private fun allFieldsAreFilled() : Boolean {
+        return !cardNumber.value.isNullOrEmpty() &&
+                !cardHolderName.value.isNullOrEmpty() &&
+                !expiryDate.value.isNullOrEmpty() &&
+                !cvv.value.isNullOrEmpty()
+    }
+
+    fun validateAllFields() : Boolean {
         for (validation in validations) {
+            validation.validate()
             if (!validation.passed) return false
         }
         return true
